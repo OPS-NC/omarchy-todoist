@@ -617,18 +617,16 @@ Panel {
 
   // ---- Quick add. Uses Todoist's own Quick Add parser (/tasks/quick) so
   //      "p1"/"p2"/"p3"/"p4", "#Project", "@label", and natural-language
-  //      due dates work exactly like typing into Todoist itself. A bare
-  //      task with no date hint gets " today" appended so it defaults to
-  //      due today instead of no due date.
+  //      due dates work exactly like typing into Todoist itself. The text
+  //      is sent as typed: a task without a date gets no due date.
   function submitQuickAdd() {
     var content = Model.safeTrim(root.quickAddText)
     if (content === "" || root.quickAddSubmitting || root.apiToken === "") return
-    var text = Model.quickAddHasDueHint(content) ? content : (content + " today")
     root.quickAddSubmitting = true
     root.errorText = ""
     runAuthedCurl(createProc, ["curl", "-fsS", "--max-time", "10", "-K", "-", "-X", "POST",
       "-H", "Content-Type: application/json",
-      "-d", JSON.stringify({ text: text }),
+      "-d", JSON.stringify({ text: content }),
       root.apiBase + "/tasks/quick"])
   }
 
