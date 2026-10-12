@@ -78,7 +78,14 @@ function taskIsOverdue(task) {
   return isoDatePrefix(task.due.date) < todayIsoDate()
 }
 
-// Overdue/due-soonest first, undated tasks last; priority breaks ties within
+// "HH:MM:SS…" part of a timed due date, "" for an all-day task.
+function dueTime(task) {
+  var s = task && task.due && task.due.date ? String(task.due.date) : ""
+  return s.length > 10 ? s.substring(11) : ""
+}
+
+// Overdue/due-soonest first, undated tasks last; within a day, timed tasks
+// first by time and all-day tasks after them; priority breaks ties within
 // the same date, then content for a stable order.
 function sortedTasks(tasks) {
   var list = (tasks || []).slice()
@@ -89,6 +96,15 @@ function sortedTasks(tasks) {
       if (aDue === "") return 1
       if (bDue === "") return -1
       return aDue < bDue ? -1 : 1
+    }
+
+    // Same day: tasks with a time first, by time; tasks without one last.
+    var aTime = dueTime(a)
+    var bTime = dueTime(b)
+    if (aTime !== bTime) {
+      if (aTime === "") return 1
+      if (bTime === "") return -1
+      return aTime < bTime ? -1 : 1
     }
 
     var aPriority = a && typeof a.priority === "number" ? a.priority : 1
