@@ -31,7 +31,7 @@ Panel {
   property bool showTaskMeta: true
   property bool showHeaderQuips: true
   property var projectsById: ({})
-  // "today" | "inbox" | "all" | "custom" — the three tabs plus whatever the
+  // "today" | "next" | "inbox" | "all" | "custom" — the four tabs plus whatever the
   // free-form filter field in Settings last applied.
   property string quickView: "today"
   property bool settingsLoaded: false
@@ -131,7 +131,8 @@ Panel {
   readonly property color contentForeground: bar ? bar.foreground : Color.foreground
   readonly property string contentFontFamily: bar ? bar.fontFamily : Style.font.family
 
-  readonly property string quickViewLabel: root.quickView === "inbox" ? "INBOX"
+  readonly property string quickViewLabel: root.quickView === "next" ? "NEXT 15 DAYS"
+    : root.quickView === "inbox" ? "INBOX"
     : root.quickView === "all" ? "ALL TASKS"
     : root.quickView === "custom" ? "CUSTOM FILTER"
     : "TODAY & OVERDUE"
@@ -139,12 +140,14 @@ Panel {
   // Short form for the header stats grid, where a narrow fixed column
   // (down to a 260px panel width, Settings → Advanced) has much less room
   // than the section-header use of quickViewLabel above.
-  readonly property string quickViewShortLabel: root.quickView === "inbox" ? "INBOX"
+  readonly property string quickViewShortLabel: root.quickView === "next" ? "NEXT"
+    : root.quickView === "inbox" ? "INBOX"
     : root.quickView === "all" ? "ALL"
     : root.quickView === "custom" ? "CUSTOM"
     : "TODAY"
 
-  readonly property string emptyStateMessage: root.quickView === "inbox" ? "Inbox is empty."
+  readonly property string emptyStateMessage: root.quickView === "next" ? "Nothing in the next 15 days."
+    : root.quickView === "inbox" ? "Inbox is empty."
     : root.quickView === "all" ? "No tasks yet."
     : root.quickView === "custom" ? "No tasks match this filter."
     : "Nothing due. You're clear."
@@ -168,8 +171,26 @@ Panel {
   }
   readonly property int todayDueCount: root.quickView === "today" ? (root.tasks.length - root.overdueCount) : 0
 
+  // Next view: one row-anchored header per due day, same pattern as the
+  // Today view's OVERDUE/TODAY split. Tasks are already sorted by date.
+  readonly property var nextDayCounts: {
+    var counts = {}
+    if (root.quickView !== "next") return counts
+    for (var i = 0; i < root.tasks.length; i++) {
+      var day = Model.taskDueDay(root.tasks[i])
+      counts[day] = (counts[day] || 0) + 1
+    }
+    return counts
+  }
+
   function taskSectionTitle(index) {
-    if (root.quickView !== "today" || index < 0 || index >= root.tasks.length) return ""
+    if (index < 0 || index >= root.tasks.length) return ""
+    if (root.quickView === "next") {
+      var day = Model.taskDueDay(root.tasks[index])
+      if (index > 0 && Model.taskDueDay(root.tasks[index - 1]) === day) return ""
+      return Model.dayHeading(day) + " · " + (root.nextDayCounts[day] || 0)
+    }
+    if (root.quickView !== "today") return ""
     var isOverdue = Model.taskIsOverdue(root.tasks[index])
     if (index > 0 && Model.taskIsOverdue(root.tasks[index - 1]) === isOverdue) return ""
     return isOverdue ? ("OVERDUE · " + root.overdueCount) : ("TODAY · " + root.todayDueCount)
@@ -250,7 +271,7 @@ Panel {
     try { parsed = JSON.parse(text || "{}") } catch (e) { parsed = {} }
     if (typeof parsed.apiToken === "string") root.apiToken = parsed.apiToken
     if (typeof parsed.filter === "string") root.filterQuery = Model.sanitizeFilter(parsed.filter)
-    if (typeof parsed.quickView === "string" && ["today", "inbox", "all", "custom"].indexOf(parsed.quickView) !== -1)
+    if (typeof parsed.quickView === "string" && ["today", "next", "inbox", "all", "custom"].indexOf(parsed.quickView) !== -1)
       root.quickView = parsed.quickView
     if (typeof parsed.keybind === "string") root.keybindCombo = parsed.keybind
     if (typeof parsed.panelWidth === "number") root.panelWidth = Math.max(260, Math.min(700, parsed.panelWidth))
@@ -406,7 +427,7 @@ Panel {
     }
   }
 
-  // ---- Quick views. "today"/"inbox" hit /tasks/filter with a canned query;
+  // ---- Quick views. "today"/"next"/"inbox" hit /tasks/filter with a canned query;
   //      "all" hits plain /tasks (no filter = every active task); "custom"
   //      reuses whatever filter the Settings field last applied.
   function selectQuickView(view) {
@@ -418,7 +439,7 @@ Panel {
     refresh()
   }
 
-  readonly property var quickViewOrder: ["today", "inbox", "all"]
+  readonly property var quickViewOrder: ["today", "next", "inbox", "all"]
 
   function cycleQuickView(direction) {
     var idx = root.quickViewOrder.indexOf(root.quickView)
@@ -557,10 +578,12 @@ Panel {
   // bar badge's independent count) — same three endpoints either way.
   function urlForView(view) {
     if (view === "all") return root.apiBase + "/tasks"
-    var query = view === "inbox" ? "#Inbox"
+    var query = view === "next" ? "next 15 days"
+      : view === "inbox" ? "#Inbox"
       : view === "custom" ? root.filterQuery
       : "today | overdue"
-    return root.apiBase + "/tasks/filter?query=" + encodeURIComponent(query) + "&lang=en"
+    // 200 is the API's page maximum; the default 50 could cut 15 days short.
+    return root.apiBase + "/tasks/filter?query=" + encodeURIComponent(query) + "&lang=en&limit=200"
   }
 
   function refresh() {
@@ -1297,6 +1320,7 @@ Panel {
         if (t === "q" || t === "Q") { quickAddField.forceActiveFocus(); return }
         if (t === "e" || t === "E") { root.startEditSelectedTask(); return }
         if (t === "t" || t === "T") { root.selectQuickView("today"); return }
+        if (t === "n" || t === "N") { root.selectQuickView("next"); return }
         if (t === "i" || t === "I") { root.selectQuickView("inbox"); return }
         if (t === "a" || t === "A") root.selectQuickView("all")
       }
@@ -1995,8 +2019,8 @@ Panel {
               focusable: false
               foreground: root.contentForeground
               fontFamily: root.contentFontFamily
-              options: ["today", "inbox", "all"].map(function(v) {
-                return { value: v, label: v === "today" ? "Today" : v === "inbox" ? "Inbox" : "All" }
+              options: ["today", "next", "inbox", "all"].map(function(v) {
+                return { value: v, label: v === "today" ? "Today" : v === "next" ? "Next" : v === "inbox" ? "Inbox" : "All" }
               })
               value: root.quickView
               onChanged: function(v) { root.selectQuickView(v) }
@@ -2007,9 +2031,9 @@ Panel {
             }
 
             PanelSectionHeader {
-              // The Today view splits into its own OVERDUE/TODAY row-anchored
+              // The Today and Next views split into their own row-anchored
               // headers below instead of one generic label up here.
-              visible: root.apiToken !== "" && root.quickView !== "today"
+              visible: root.apiToken !== "" && root.quickView !== "today" && root.quickView !== "next"
               height: visible ? implicitHeight : 0
               text: root.quickViewLabel
               foreground: root.contentForeground
@@ -2195,8 +2219,8 @@ Panel {
                     color: root.contentForeground
                     font.family: root.contentFontFamily
                     font.pixelSize: Style.font.bodySmall
-                    text: "Tab / Shift+Tab — cycle Today → Inbox → All\n"
-                      + "t / i / a — jump to Today / Inbox / All\n"
+                    text: "Tab / Shift+Tab — cycle Today → Next → Inbox → All\n"
+                      + "t / n / i / a — jump to Today / Next / Inbox / All\n"
                       + "p — toggle Settings\n"
                       + "↑/↓ or k/j — move task selection\n"
                       + "Enter — open task on Todoist\n"

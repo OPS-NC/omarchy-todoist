@@ -71,7 +71,9 @@ constraints, and a few things that didn't work the first time.
   `#Project`, `@label`, and natural-language due dates (`tomorrow at 5pm`,
   `next Monday`) all work exactly like typing into Todoist itself. The text
   is sent unchanged: a task with no date in it (`Buy milk`) gets no due date.
-- **Today / Inbox / All** quick-view tabs above the list, plus a custom
+- **Next** tab: the next 15 days, grouped by day (`TODAY`, `TOMORROW`,
+  `WED 14 OCT`…) with a task count per day.
+- **Today / Next / Inbox / All** quick-view tabs above the list, plus a custom
   [Todoist filter](https://www.todoist.com/help/articles/introduction-to-filters-V98wIH)
   field in Settings for anything more specific (defaults to `today | overdue`).
 - Settings view (gear icon) to paste your API token and manage the above.
@@ -138,8 +140,8 @@ The whole panel is operable without a mouse:
 | Key | Action |
 | --- | --- |
 | `Escape` | Back out of Settings to the task list (works from any Settings field too); press again to close the panel. While the Add-a-task box has focus, just leaves the box instead |
-| `Tab` / `Shift+Tab` | Cycle Today → Inbox → All. Inside Settings, instead walks every control in order — token field, Save/Remove token, filter field + Apply, keybind buttons, and the General/Advanced buttons and steppers — scrolling as needed to keep the focused control in view |
-| `t` / `i` / `a` | Jump straight to the Today, Inbox, or All view. Inside Settings, `t` opens Todoist in the browser instead |
+| `Tab` / `Shift+Tab` | Cycle Today → Next → Inbox → All. Inside Settings, instead walks every control in order — token field, Save/Remove token, filter field + Apply, keybind buttons, and the General/Advanced buttons and steppers — scrolling as needed to keep the focused control in view |
+| `t` / `n` / `i` / `a` | Jump straight to the Today, Next, Inbox, or All view. Inside Settings, `t` opens Todoist in the browser instead |
 | `p` | Toggle Settings open/closed |
 | `↑`/`↓` or `k`/`j` | Move the selection up/down the task list |
 | `Enter` | Open the selected task on the Todoist website, then close the panel |

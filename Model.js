@@ -51,6 +51,28 @@ function taskMetaLabel(task, projectName) {
   return parts.join("  ")
 }
 
+// Section heading for one due date in the Next view: "TODAY", "TOMORROW",
+// then "WED 14 OCT". Parsed as a local date so the day never shifts with
+// the timezone offset.
+var DAY_NAMES = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
+var MONTH_NAMES = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+
+function dayHeading(isoDate) {
+  var parts = String(isoDate || "").split("-")
+  if (parts.length !== 3) return "NO DATE"
+  var date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]))
+  var now = new Date()
+  var today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  var offset = Math.round((date - today) / 86400000)
+  if (offset === 0) return "TODAY"
+  if (offset === 1) return "TOMORROW"
+  return DAY_NAMES[date.getDay()] + " " + date.getDate() + " " + MONTH_NAMES[date.getMonth()]
+}
+
+function taskDueDay(task) {
+  return task && task.due && task.due.date ? isoDatePrefix(task.due.date) : ""
+}
+
 function taskIsOverdue(task) {
   if (!task || !task.due || !task.due.date) return false
   return isoDatePrefix(task.due.date) < todayIsoDate()
