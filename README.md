@@ -71,7 +71,7 @@ constraints, and a few things that didn't work the first time.
   `#Project`, `@label`, and natural-language due dates (`tomorrow at 5pm`,
   `next Monday`) all work exactly like typing into Todoist itself. The text
   is sent unchanged: a task with no date in it (`Buy milk`) gets no due date.
-- **Next** tab: the next 15 days, grouped by day (`TODAY`, `TOMORROW`,
+- **Next** tab, shown each time the panel opens: the next 15 days, grouped by day (`TODAY`, `TOMORROW`,
   `WED 14 OCT`…) with a task count per day.
 - **Today / Next / Inbox / All** quick-view tabs above the list, plus a custom
   [Todoist filter](https://www.todoist.com/help/articles/introduction-to-filters-V98wIH)

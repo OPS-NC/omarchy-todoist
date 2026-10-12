@@ -33,7 +33,7 @@ Panel {
   property var projectsById: ({})
   // "today" | "next" | "inbox" | "all" | "custom" — the four tabs plus whatever the
   // free-form filter field in Settings last applied.
-  property string quickView: "today"
+  property string quickView: "next"
   property bool settingsLoaded: false
   property bool settingsView: true
   // Gives keyboard nav a sensible starting point regardless of how Settings
@@ -233,6 +233,12 @@ Panel {
   // ---- Lifecycle. Matches the clock/weather contract: open() refreshes
   //      before showing so the list is never more than one popup-open stale.
   function open() {
+    // Always open on Next; other tabs are one click or key away.
+    if (root.quickView !== "next") {
+      root.quickView = "next"
+      root.selectedTaskIndex = -1
+      root.taskCursorActive = false
+    }
     if (root.apiToken !== "") refresh()
     root.controller.show()
     // Only steal focus into a text field when Settings needs the token
