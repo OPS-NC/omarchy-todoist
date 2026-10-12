@@ -26,6 +26,19 @@ function isoDatePrefix(dateStr) {
   return s.length >= 10 ? s.substring(0, 10) : s
 }
 
+// A task's due date as local "YYYY-MM-DD" or "YYYY-MM-DDTHH:MM:SS".
+// Floating dates are already local; a task with a fixed timezone comes
+// back in UTC ("…T06:30:00Z") and is converted, so sorting and day
+// grouping use the time the user actually sees.
+function localDue(task) {
+  var s = task && task.due && task.due.date ? String(task.due.date) : ""
+  if (!/(Z|[+-]\d\d:?\d\d)$/.test(s)) return s
+  var d = new Date(s)
+  if (isNaN(d.getTime())) return s
+  return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate())
+    + "T" + pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds())
+}
+
 function todayIsoDate() {
   var now = new Date()
   return now.getFullYear() + "-" + pad2(now.getMonth() + 1) + "-" + pad2(now.getDate())
@@ -70,17 +83,17 @@ function dayHeading(isoDate) {
 }
 
 function taskDueDay(task) {
-  return task && task.due && task.due.date ? isoDatePrefix(task.due.date) : ""
+  return isoDatePrefix(localDue(task))
 }
 
 function taskIsOverdue(task) {
   if (!task || !task.due || !task.due.date) return false
-  return isoDatePrefix(task.due.date) < todayIsoDate()
+  return isoDatePrefix(localDue(task)) < todayIsoDate()
 }
 
 // "HH:MM:SS…" part of a timed due date, "" for an all-day task.
 function dueTime(task) {
-  var s = task && task.due && task.due.date ? String(task.due.date) : ""
+  var s = localDue(task)
   return s.length > 10 ? s.substring(11) : ""
 }
 
@@ -90,8 +103,8 @@ function dueTime(task) {
 function sortedTasks(tasks) {
   var list = (tasks || []).slice()
   list.sort(function(a, b) {
-    var aDue = a && a.due && a.due.date ? isoDatePrefix(a.due.date) : ""
-    var bDue = b && b.due && b.due.date ? isoDatePrefix(b.due.date) : ""
+    var aDue = isoDatePrefix(localDue(a))
+    var bDue = isoDatePrefix(localDue(b))
     if (aDue !== bDue) {
       if (aDue === "") return 1
       if (bDue === "") return -1

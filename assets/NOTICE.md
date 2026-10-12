@@ -5,3 +5,7 @@
 Source: [homarr-labs/dashboard-icons](https://github.com/homarr-labs/dashboard-icons), `svg/todoist.svg`.
 
 Copyright the dashboard-icons contributors (Bjorn Lammers, Meier Lukas, Thomas Camlong, Homarr Labs). Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) — unmodified from the source file.
+
+`TodoistIcon.qml` draws the same mark from these SVG paths in a single
+theme color, with the three ticks cut out of the square instead of filled
+in white. That recolored drawing is a modification of the source file.
